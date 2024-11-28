@@ -1,0 +1,74 @@
+name: Reusable Deploy Docker Compose With SSH
+
+on:
+  workflow_call:
+    secrets:
+      ssh_key:
+        description: "SSH Private Key"
+        required: true
+    inputs:
+      ssh_host:
+        description: "SSH Host"
+        required: true
+        type: string
+      ssh_user:
+        description: "SSH User"
+        required: false
+        type: string
+        default: "github-actions"
+      docker_compose_file:
+        description: "Docker Compose File"
+        required: false
+        type: string
+        default: "docker-compose.yml"
+      docker_compose_project_name:
+        description: "Docker Project Name"
+        required: true
+        type: string
+      docker_compose_volumes_folder:
+        description: "Docker Volumes Folder"
+        required: false
+        type: string
+      destroy:
+        description: "Destroy the stack"
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  deploy:
+    env:
+      DOCKER_COMPOSE_PROJECT_FOLDER: /docker-compose/${{ inputs.docker_compose_project_name }}
+      DOCKER_COMPOSE_FILE_FULL_PATH: /docker-compose/${{ inputs.docker_compose_project_name }}/docker-compose.yml
+    runs-on: ubuntu-latest
+    name: Deploy with SSH
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: echo "${{ secrets.ssh_key }}" > ~/.ssh/id_rsa && chmod 600 ~/.ssh/id_rsa
+
+      - name: Create Docker Project Folder
+        run: ssh -o StrictHostKeyChecking=no ${{ inputs.ssh_user }}@${{ inputs.ssh_host }} "mkdir -p ${{ env.DOCKER_COMPOSE_PROJECT_FOLDER }}"
+
+      - name: Copy Docker Compose File
+        run: scp -o StrictHostKeyChecking=no ${{ inputs.docker_compose_file }} ${{ inputs.ssh_user }}@${{ inputs.ssh_host }}:${{ env.DOCKER_COMPOSE_FILE_FULL_PATH }}
+
+      - name: Copy Volumes Folder
+        if: ${{ inputs.docker_compose_volumes_folder }}
+        run: scp -r -o StrictHostKeyChecking=no ${{ inputs.docker_compose_volumes_folder }} ${{ inputs.ssh_user }}@${{ inputs.ssh_host }}:${{ env.DOCKER_COMPOSE_PROJECT_FOLDER }}
+
+      - name: Deploy with Docker Compose
+        if: ${{ !inputs.destroy }}
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ inputs.ssh_user }}@${{ inputs.ssh_host }} << "EOF"
+            docker-compose -f ${{ env.DOCKER_COMPOSE_FILE_FULL_PATH }} up -d --project-name ${{ inputs.docker_compose_project_name }}
+          EOF
+
+      - name: Destroy with Docker Compose
+        if: ${{ inputs.destroy }}
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ inputs.ssh_user }}@${{ inputs.ssh_host }} << "EOF"
+            docker-compose -f ${{ env.DOCKER_COMPOSE_FILE_FULL_PATH }} down --volumes --remove-orphans --project-name ${{ inputs.docker_compose_project_name }}
+          EOF
