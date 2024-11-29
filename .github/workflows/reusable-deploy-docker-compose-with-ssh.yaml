@@ -62,12 +62,12 @@ jobs:
         if: ${{ !inputs.destroy }}
         run: |
           ssh -o StrictHostKeyChecking=no ${{ inputs.ssh_user }}@${{ secrets.ssh_host }} << "EOF"
-            docker-compose -f ${{ env.DOCKER_COMPOSE_FILE_FULL_PATH }} up -d --project-name ${{ inputs.docker_compose_project_name }}
+            docker compose -f ${{ env.DOCKER_COMPOSE_FILE_FULL_PATH }} up -d --project-name ${{ inputs.docker_compose_project_name }}
           EOF
 
       - name: Destroy with Docker Compose
         if: ${{ inputs.destroy }}
         run: |
           ssh -o StrictHostKeyChecking=no ${{ inputs.ssh_user }}@${{ secrets.ssh_host }} << "EOF"
-            docker-compose -f ${{ env.DOCKER_COMPOSE_FILE_FULL_PATH }} down --volumes --remove-orphans --project-name ${{ inputs.docker_compose_project_name }}
+            docker compose -f ${{ env.DOCKER_COMPOSE_FILE_FULL_PATH }} down --volumes --remove-orphans --project-name ${{ inputs.docker_compose_project_name }}
           EOF
