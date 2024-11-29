@@ -39,7 +39,7 @@ jobs:
   deploy:
     env:
       DOCKER_COMPOSE_PROJECT_FOLDER: /docker-compose/${{ inputs.docker_compose_project_name }}
-      DOCKER_COMPOSE_FILE_FULL_PATH: /docker-compose/${{ inputs.docker_compose_project_name }}/docker-compose.yml
+      DOCKER_COMPOSE_FILE_FULL_PATH: /docker-compose/${{ inputs.docker_compose_project_name }}/docker-compose.yaml
     runs-on: ubuntu-latest
     name: Deploy with SSH
     steps:
