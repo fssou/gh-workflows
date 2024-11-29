@@ -20,7 +20,7 @@ on:
         description: "Docker Compose File"
         required: false
         type: string
-        default: "docker-compose.yml"
+        default: "docker-compose.yaml"
       docker_compose_project_name:
         description: "Docker Project Name"
         required: true
