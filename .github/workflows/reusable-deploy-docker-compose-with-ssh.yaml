@@ -53,7 +53,7 @@ jobs:
         run: ssh -o StrictHostKeyChecking=no ${{ inputs.ssh_user }}@${{ secrets.ssh_host }} "mkdir -p ${{ env.DOCKER_COMPOSE_PROJECT_FOLDER }}"
 
       - name: Copy Docker Compose File
-        run: scp -o StrictHostKeyChecking=no ${{ inputs.docker_compose_file }} ${{ inputs.ssh_user }}@${{ secrets.ssh_host }}:${{ env.DOCKER_COMPOSE_FILE_FULL_PATH }}
+        run: scp -o StrictHostKeyChecking=no ${{ inputs.docker_compose_file }} ${{ inputs.ssh_user }}@${{ secrets.ssh_host }}:${{ env.DOCKER_COMPOSE_PROJECT_FOLDER }}
 
       - name: Clean Volumes Folder
         if: ${{ inputs.docker_compose_volumes_folder }}
