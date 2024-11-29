@@ -34,13 +34,14 @@ on:
         type: boolean
         default: false
 
+env:
+  DOCKER_COMPOSE_PROJECT_FOLDER: /home/${{ inputs.ssh_user }}/docker-compose/${{ inputs.docker_compose_project_name }}
+  DOCKER_COMPOSE_FILE_FULL_PATH: /home/${{ inputs.ssh_user }}/docker-compose/${{ inputs.docker_compose_project_name }}/docker-compose.yaml
+
 jobs:
-  deploy:
-    env:
-      DOCKER_COMPOSE_PROJECT_FOLDER: /home/${{ inputs.ssh_user }}/docker-compose/${{ inputs.docker_compose_project_name }}
-      DOCKER_COMPOSE_FILE_FULL_PATH: /home/${{ inputs.ssh_user }}/docker-compose/${{ inputs.docker_compose_project_name }}/docker-compose.yaml
+  setup:
     runs-on: ubuntu-latest
-    name: Deploy with SSH
+    name: Setup
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -57,12 +58,18 @@ jobs:
       - name: Copy Volumes Folder
         if: ${{ inputs.docker_compose_volumes_folder }}
         run: scp -r -o StrictHostKeyChecking=no ${{ inputs.docker_compose_volumes_folder }} ${{ inputs.ssh_user }}@${{ secrets.ssh_host }}:${{ env.DOCKER_COMPOSE_PROJECT_FOLDER }}
+  deploy:
+    runs-on: ubuntu-latest
+    name: Deploy
+    steps:
+      - name: Setup SSH
+        run: mkdir -p ~/.ssh && echo "${{ secrets.ssh_key }}" > ~/.ssh/id_rsa && chmod 600 ~/.ssh/id_rsa
 
       - name: Deploy with Docker Compose
         if: ${{ !inputs.destroy }}
         run: |
           ssh -o StrictHostKeyChecking=no ${{ inputs.ssh_user }}@${{ secrets.ssh_host }} << "EOF"
-            docker compose --project-name ${{ inputs.docker_compose_project_name }} -f ${{ env.DOCKER_COMPOSE_FILE_FULL_PATH }} up -d
+            docker compose --project-name ${{ inputs.docker_compose_project_name }} -f ${{ env.DOCKER_COMPOSE_FILE_FULL_PATH }} up -d --force-recreate --remove-orphans --always-recreate-deps
           EOF
 
       - name: Destroy with Docker Compose
