@@ -49,15 +49,15 @@ jobs:
       - name: Setup SSH
         run: mkdir -p ~/.ssh && echo "${{ secrets.ssh_key }}" > ~/.ssh/id_rsa && chmod 600 ~/.ssh/id_rsa
 
+      - name: Clean Volumes Folder
+        if: ${{ inputs.docker_compose_volumes_folder }}
+        run: ssh -o StrictHostKeyChecking=no ${{ inputs.ssh_user }}@${{ secrets.ssh_host }} "rm -rf ${{ env.DOCKER_COMPOSE_PROJECT_FOLDER }}"
+
       - name: Create Docker Project Folder
         run: ssh -o StrictHostKeyChecking=no ${{ inputs.ssh_user }}@${{ secrets.ssh_host }} "mkdir -p ${{ env.DOCKER_COMPOSE_PROJECT_FOLDER }}"
 
       - name: Copy Docker Compose File
         run: scp -o StrictHostKeyChecking=no ${{ inputs.docker_compose_file }} ${{ inputs.ssh_user }}@${{ secrets.ssh_host }}:${{ env.DOCKER_COMPOSE_PROJECT_FOLDER }}
-
-      - name: Clean Volumes Folder
-        if: ${{ inputs.docker_compose_volumes_folder }}
-        run: ssh -o StrictHostKeyChecking=no ${{ inputs.ssh_user }}@${{ secrets.ssh_host }} "rm -rf ${{ env.DOCKER_COMPOSE_PROJECT_FOLDER }}"
 
       - name: Copy Volumes Folder
         if: ${{ inputs.docker_compose_volumes_folder }}
