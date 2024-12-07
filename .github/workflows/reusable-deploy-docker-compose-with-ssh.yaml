@@ -9,6 +9,13 @@ on:
       ssh_host:
         description: "SSH Host"
         required: true
+      docker_compose_envs:
+        description: |
+          Environment variables to be set on the remote server.
+          Format:
+            export KEY1=VALUE1
+            export KEY2=VALUE2
+        required: false
     inputs:
       ssh_user:
         description: "SSH User"
@@ -80,6 +87,7 @@ jobs:
         if: ${{ !inputs.destroy && inputs.docker_compose_recreate }}
         run: |
           ssh -o StrictHostKeyChecking=no ${{ inputs.ssh_user }}@${{ secrets.ssh_host }} << "EOF"
+            ${{ secrets.docker_compose_envs || '' }}
             docker compose --project-name ${{ inputs.docker_compose_project_name }} -f ${{ env.DOCKER_COMPOSE_FILE_FULL_PATH }} up -d --force-recreate --remove-orphans --always-recreate-deps
           EOF
 
@@ -87,6 +95,7 @@ jobs:
         if: ${{ !inputs.destroy && !inputs.docker_compose_recreate }}
         run: |
           ssh -o StrictHostKeyChecking=no ${{ inputs.ssh_user }}@${{ secrets.ssh_host }} << "EOF"
+            ${{ secrets.docker_compose_envs || '' }}
             docker compose --project-name ${{ inputs.docker_compose_project_name }} -f ${{ env.DOCKER_COMPOSE_FILE_FULL_PATH }} up -d
           EOF
 
@@ -94,5 +103,6 @@ jobs:
         if: ${{ inputs.destroy }}
         run: |
           ssh -o StrictHostKeyChecking=no ${{ inputs.ssh_user }}@${{ secrets.ssh_host }} << "EOF"
+            ${{ secrets.docker_compose_envs || '' }}
             docker compose --project-name ${{ inputs.docker_compose_project_name }} -f ${{ env.DOCKER_COMPOSE_FILE_FULL_PATH }} down --volumes --remove-orphans
           EOF
