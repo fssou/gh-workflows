@@ -28,6 +28,11 @@ on:
         description: "Docker Volumes Folder"
         required: false
         type: string
+      docker_compose_recreate:
+        description: "Docker Recreate"
+        required: false
+        type: boolean
+        default: true
       destroy:
         description: "Destroy the stack"
         required: false
@@ -71,11 +76,18 @@ jobs:
       - name: Setup SSH
         run: mkdir -p ~/.ssh && echo "${{ secrets.ssh_key }}" > ~/.ssh/id_rsa && chmod 600 ~/.ssh/id_rsa
 
-      - name: Deploy with Docker Compose
-        if: ${{ !inputs.destroy }}
+      - name: Deploy with Docker Compose (Recreate)
+        if: ${{ !inputs.destroy && inputs.docker_compose_recreate }}
         run: |
           ssh -o StrictHostKeyChecking=no ${{ inputs.ssh_user }}@${{ secrets.ssh_host }} << "EOF"
             docker compose --project-name ${{ inputs.docker_compose_project_name }} -f ${{ env.DOCKER_COMPOSE_FILE_FULL_PATH }} up -d --force-recreate --remove-orphans --always-recreate-deps
+          EOF
+
+      - name: Deploy with Docker Compose
+        if: ${{ !inputs.destroy && !inputs.docker_compose_recreate }}
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ inputs.ssh_user }}@${{ secrets.ssh_host }} << "EOF"
+            docker compose --project-name ${{ inputs.docker_compose_project_name }} -f ${{ env.DOCKER_COMPOSE_FILE_FULL_PATH }} up -d
           EOF
 
       - name: Destroy with Docker Compose
